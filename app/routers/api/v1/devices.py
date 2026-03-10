@@ -75,7 +75,17 @@ async def get_device_count():
 	description='Returns connection and reading status for the specified device.',
 )
 async def get_device_info(device_name: str):
-	info = rfid_manager.devices.get_device_info(name=device_name)
+	info: dict = rfid_manager.devices.get_device_info(name=device_name)
+	class_name = info.get('device_class')
+	if class_name == 'X714':
+		info['hostname'] = info.get('serial_number')
+	elif class_name == 'R700_IOT':
+		device = rfid_manager.devices.get_device(name=device_name)
+		if device is not None:
+			info['hostname'] = device.ip
+	else:
+		info['hostname'] = None
+
 	if len(info) == 0:
 		return JSONResponse(
 			status_code=404,
@@ -91,6 +101,16 @@ async def get_device_info(device_name: str):
 )
 async def get_devices_info():
 	info = rfid_manager.devices.get_device_info()
+	for device_info in info:
+		class_name = device_info.get('device_class')
+		if class_name == 'X714':
+			device_info['hostname'] = device_info.get('serial_number')
+		elif class_name == 'R700_IOT':
+			device = rfid_manager.devices.get_device(name=device_info.get('name'))
+			if device is not None:
+				device_info['hostname'] = device.ip
+		else:
+			device_info['hostname'] = None
 	return JSONResponse(status_code=200, content=info)
 
 
