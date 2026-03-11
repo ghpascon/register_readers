@@ -46,6 +46,7 @@ class Settings:
 		self.DATABASE_URL: str | None = data.get('DATABASE_URL', None)
 		self.XTRACK_URL: str | None = data.get('XTRACK_URL', None)
 		self.PORT: int = data.get('PORT', 5000)
+		self.SMTX_DB: str = data.get('SMTX_DB')
 
 	def get_current_settings(self):
 		return {

@@ -3,7 +3,7 @@
     "IP": "impinj-14-46-36",
     "USERNAME": "root",
     "PASSWORD": "impinj",
-    "START_READING": true,
+    "START_READING": false,
     "SESSION": 1,
     "ACTIVE_ANT": [
         1

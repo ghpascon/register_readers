@@ -1,13 +1,115 @@
 {% extends "base.html" %} {% block content %}
-<!-- Main Layout Container -->
-<div class="grid grid-cols-1 lg:grid-cols-12 gap-4 pt-5 pb-5 px-4">
-  <div class="lg:col-span-3 space-y-4">
-    {% include 'includes/_events.html' %} {% include 'includes/_devices.html' %}
-  </div>
-  <div class="lg:col-span-9">
-    {% if table == "complete" %} {% include 'includes/_tags_all.html' %} {% elif
-    table == "gtin" %} {% include 'includes/_tags_gtin.html' %} {% else %} {%
-    include 'includes/_tags.html' %} {% endif %}
-  </div>
+<div class="container mx-auto py-4">
+  <h2 class="text-2xl font-bold mb-6 text-center">Dispositivos RFID</h2>
+  <div
+    id="devices-list"
+    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+  ></div>
 </div>
+<script>
+  function getCardColor(device) {
+    if (device.is_connected) {
+      if (device.serial_number && device.hostname) {
+        return "bg-green-100 border-green-500";
+      } else {
+        return "bg-yellow-100 border-yellow-500";
+      }
+    } else {
+      return "bg-red-100 border-red-500";
+    }
+  }
+
+  function getStatusIcon(device) {
+    if (device.is_connected) {
+      if (device.serial_number && device.hostname) {
+        return '<span class="inline-block w-4 h-4 rounded-full bg-green-500 mr-2"></span>';
+      } else {
+        return '<span class="inline-block w-4 h-4 rounded-full bg-yellow-500 mr-2"></span>';
+      }
+    } else {
+      return '<span class="inline-block w-4 h-4 rounded-full bg-red-500 mr-2"></span>';
+    }
+  }
+
+  const REGISTER_URL = "{{ url_for('register_device') }}";
+
+  async function registerDevice(device) {
+    try {
+      const res = await fetch(REGISTER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          serial_number: device.serial_number,
+          hostname: device.hostname,
+          device_class: device.device_class,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showAlert(
+          `Dispositivo '${device.name}' registrado com sucesso!`,
+          "success",
+        );
+      } else {
+        showAlert(
+          `Erro ao registrar '${device.name}': ${data.error || JSON.stringify(data)}`,
+          "error",
+        );
+      }
+    } catch (e) {
+      showAlert(`Erro de comunicação ao registrar '${device.name}'.`, "error");
+    }
+  }
+
+  async function loadDevices() {
+    const url = "{{ url_for('get_devices_info') }}";
+    const res = await fetch(url);
+    const devices = await res.json();
+    const list = document.getElementById("devices-list");
+    list.innerHTML = "";
+    devices.forEach((device) => {
+      const canRegister =
+        device.is_connected && device.serial_number && device.hostname;
+      const card = document.createElement("div");
+      card.className = `border-2 shadow-lg rounded-xl p-6 flex flex-col gap-1 transition-all duration-300 ${getCardColor(device)}`;
+      card.innerHTML = `
+        <div class="flex items-center mb-2">
+          ${getStatusIcon(device)}
+          <span class="font-semibold text-xl">${device.name}</span>
+        </div>
+        <div class="text-sm"><span class="font-bold">Tipo:</span> ${device.device_type}</div>
+        <div class="text-sm"><span class="font-bold">Serial:</span> <span class="${device.serial_number ? "text-green-700" : "text-red-700"}">${device.serial_number || "-"}</span></div>
+        <div class="text-sm"><span class="font-bold">Hostname:</span> <span class="${device.hostname ? "text-green-700" : "text-red-700"}">${device.hostname || "-"}</span></div>
+        <div class="text-sm"><span class="font-bold">Classe:</span> ${device.device_class}</div>
+        <div class="text-sm"><span class="font-bold">Conectado:</span> <span class="${device.is_connected ? "text-green-700" : "text-red-700"}">${device.is_connected ? "Sim" : "Não"}</span></div>
+        <div class="text-sm"><span class="font-bold">Pode imprimir:</span> ${device.can_print ? "Sim" : "Não"}</div>
+        <div class="text-sm"><span class="font-bold">Para imprimir:</span> ${device.to_print}</div>
+        <div class="mt-3">
+          <button
+            class="w-full py-2 px-4 rounded-lg font-semibold text-sm transition-all duration-200
+              ${
+                canRegister
+                  ? "bg-green-600 hover:bg-green-700 text-white cursor-pointer shadow"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-60"
+              }"
+            ${canRegister ? "" : "disabled"}
+            data-register-btn
+          >
+            Registrar
+          </button>
+        </div>
+      `;
+      if (canRegister) {
+        card
+          .querySelector("[data-register-btn]")
+          .addEventListener("click", () => registerDevice(device));
+      }
+      list.appendChild(card);
+    });
+  }
+  window.addEventListener("DOMContentLoaded", () => {
+    loadDevices();
+    setInterval(loadDevices, 1000);
+  });
+</script>
 {% endblock %}
