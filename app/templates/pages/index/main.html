@@ -6,6 +6,46 @@
     class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
   ></div>
 </div>
+
+<!-- Register Result Modal -->
+<div
+  id="register-modal"
+  class="fixed inset-0 z-50 flex items-center justify-center hidden"
+>
+  <div
+    class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+    id="modal-backdrop"
+  ></div>
+  <div
+    id="modal-box"
+    class="relative z-10 w-full max-w-md mx-4 rounded-2xl shadow-2xl p-6 border-2"
+  >
+    <div class="flex items-center gap-3 mb-4">
+      <div
+        id="modal-icon"
+        class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+      ></div>
+      <h3 id="modal-title" class="text-lg font-bold"></h3>
+    </div>
+    <p id="modal-message" class="text-sm mb-4"></p>
+    <div id="modal-label-section" class="hidden mb-4">
+      <hr class="mb-3" />
+      <p class="text-sm font-bold mb-2">Dados da Etiqueta</p>
+      <div id="modal-label-printed" class="text-sm mb-1"></div>
+      <div
+        id="modal-label-data"
+        class="text-sm bg-white/60 rounded-lg p-3 mt-2 font-mono break-all whitespace-pre-wrap text-xs"
+      ></div>
+    </div>
+    <button
+      id="modal-close-btn"
+      class="w-full py-2 px-4 rounded-lg font-semibold text-sm text-white transition-all duration-200"
+    >
+      Fechar
+    </button>
+  </div>
+</div>
+
 <script>
   function getCardColor(device) {
     if (device.is_connected) {
@@ -33,6 +73,83 @@
 
   const REGISTER_URL = "{{ url_for('register_device') }}";
 
+  const MODAL_THEMES = {
+    success: {
+      box: "bg-green-50 border-green-400",
+      title: "text-green-800",
+      icon_bg: "bg-green-500",
+      btn: "bg-green-600 hover:bg-green-700",
+      icon: `<svg class="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>`,
+    },
+    warning: {
+      box: "bg-yellow-50 border-yellow-400",
+      title: "text-yellow-800",
+      icon_bg: "bg-yellow-500",
+      btn: "bg-yellow-500 hover:bg-yellow-600",
+      icon: `<svg class="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>`,
+    },
+    error: {
+      box: "bg-red-50 border-red-400",
+      title: "text-red-800",
+      icon_bg: "bg-red-500",
+      btn: "bg-red-600 hover:bg-red-700",
+      icon: `<svg class="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>`,
+    },
+  };
+
+  function showRegisterModal({
+    level,
+    title,
+    message,
+    labelPrinted,
+    labelData,
+  }) {
+    const theme = MODAL_THEMES[level] || MODAL_THEMES.error;
+    const modal = document.getElementById("register-modal");
+    const box = document.getElementById("modal-box");
+    const iconEl = document.getElementById("modal-icon");
+    const titleEl = document.getElementById("modal-title");
+    const msgEl = document.getElementById("modal-message");
+    const labelSection = document.getElementById("modal-label-section");
+    const labelPrintedEl = document.getElementById("modal-label-printed");
+    const labelDataEl = document.getElementById("modal-label-data");
+    const closeBtn = document.getElementById("modal-close-btn");
+
+    box.className = `relative z-10 w-full max-w-md mx-4 rounded-2xl shadow-2xl p-6 border-2 ${theme.box}`;
+    iconEl.className = `w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${theme.icon_bg}`;
+    iconEl.innerHTML = theme.icon;
+    titleEl.className = `text-lg font-bold ${theme.title}`;
+    titleEl.textContent = title;
+    msgEl.textContent = message;
+    closeBtn.className = `w-full py-2 px-4 rounded-lg font-semibold text-sm text-white transition-all duration-200 ${theme.btn}`;
+
+    if (labelData !== undefined && labelData !== null) {
+      labelSection.classList.remove("hidden");
+      labelPrintedEl.innerHTML = `<span class="font-bold">Impressão:</span> <span class="${labelPrinted ? "text-green-700" : "text-red-700"}">${labelPrinted ? "Sucesso" : "Falhou"}</span>`;
+      labelDataEl.textContent =
+        typeof labelData === "object"
+          ? JSON.stringify(labelData, null, 2)
+          : labelData;
+    } else {
+      labelSection.classList.add("hidden");
+    }
+
+    modal.classList.remove("hidden");
+  }
+
+  function closeRegisterModal() {
+    document.getElementById("register-modal").classList.add("hidden");
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    document
+      .getElementById("modal-close-btn")
+      .addEventListener("click", closeRegisterModal);
+    document
+      .getElementById("modal-backdrop")
+      .addEventListener("click", closeRegisterModal);
+  });
+
   async function registerDevice(device) {
     try {
       const res = await fetch(REGISTER_URL, {
@@ -46,18 +163,47 @@
       });
       const data = await res.json();
       if (res.ok) {
-        showAlert(
-          `Dispositivo '${device.name}' registrado com sucesso!`,
-          "success",
-        );
+        const registered = data.registered;
+        const printLabel = data.print_label;
+        const message = data.message || "";
+        const labelPrinted = data.label_printed;
+        const labelData = data.label_data;
+        if (registered) {
+          showRegisterModal({
+            level: "success",
+            title: "Registrado com sucesso!",
+            message,
+            labelPrinted,
+            labelData,
+          });
+        } else if (printLabel) {
+          showRegisterModal({
+            level: "warning",
+            title: "Atenção",
+            message,
+            labelPrinted,
+            labelData,
+          });
+        } else {
+          showRegisterModal({
+            level: "error",
+            title: "Não registrado",
+            message,
+          });
+        }
       } else {
-        showAlert(
-          `Erro ao registrar '${device.name}': ${data.error || JSON.stringify(data)}`,
-          "error",
-        );
+        showRegisterModal({
+          level: "error",
+          title: "Erro",
+          message: data.error || JSON.stringify(data),
+        });
       }
     } catch (e) {
-      showAlert(`Erro de comunicação ao registrar '${device.name}'.`, "error");
+      showRegisterModal({
+        level: "error",
+        title: "Erro de comunicação",
+        message: String(e),
+      });
     }
   }
 
