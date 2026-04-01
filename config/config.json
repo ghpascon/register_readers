@@ -1,6 +1,6 @@
 {
   "TITLE": "SMARTX",
-  "LOG_PATH": "C:/Users/DELL/Desktop/Logs",
+  "LOG_PATH": "/home/gabriel/Desktop/Logs",
   "STORAGE_DAYS": 7,
   "OPEN_BROWSER": false,
   "BEEP": false,
