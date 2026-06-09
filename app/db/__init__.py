@@ -17,7 +17,11 @@ def setup_database(database_url: str = None) -> DatabaseManager:
 		db_manager.register_models(model)
 
 	logging.info('Creating tables...')
-	db_manager.create_tables()
+	try:
+		db_manager.create_tables()
+		logging.info('Tables created successfully.')
+	except Exception as e:
+		logging.error(f'Error creating tables: {e}')
 
 	logging.info('DatabaseManager setup complete.')
 
